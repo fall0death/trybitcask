@@ -11,7 +11,10 @@
 #include<unistd.h>
 namespace bitcask{
 
-
+const std::string index_directory = "/index";
+const std::string data_directory = "/data";
+const std::string index_file_name = "db_index_";
+const std::string data_file_name = "db_data_";
 
 struct bitcask_data{
     time_t time;//增加数据的时间
@@ -51,7 +54,7 @@ class Bitcask{
         std::ostream active_data_file;
         std::ostream active_hint_file;
         
-        unordered_map<std::string,bitcask_index> index;
+        unordered_map<std::string,bitcask_index> index;//索引的哈希图
 
         int64_t active_hint_id;
         int64_t active_data_id;
