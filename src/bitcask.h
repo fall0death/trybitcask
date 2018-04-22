@@ -40,7 +40,7 @@ class Bitcask{
 
         bool close();
 
-        init();
+        bool init();
 
         bool _insert();//增操作
         bool _update();//改操作
