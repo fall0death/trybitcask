@@ -9,6 +9,7 @@
 #include<vector>
 #include<time.h>
 #include<unistd.h>
+
 namespace bitcask{
 
 const std::string index_directory = "/index";
@@ -36,11 +37,12 @@ struct bitcask_index{
 class Bitcask{
     public:
         Bitcask();
+        
         ~Bitcask();
 
-        bool close();
+        bool close();//关闭输出流文件
 
-        bool init();
+        bool init();//进行初始化操作
 
         bool _insert();//增操作
         bool _update();//改操作
@@ -49,25 +51,42 @@ class Bitcask{
         bool _merge();//整合数据
 
     private:
-        Bitcask(Bitcask &b);
+        Bitcask(const Bitcask &b);
+        void operator = (const bitcask &b);
 
         std::ostream active_data_file;
         std::ostream active_hint_file;
         
-        unordered_map<std::string,bitcask_index> index;//索引的哈希图
+        unordered_map<std::string,bitcask_index> index_hash;//索引的哈希图
 
         int64_t active_hint_id;
         int64_t active_data_id;
 
-        bool write_file();
+        bool write_hint_file();
+        bool write_data_file();
         bool read_file();
 
 
 };
 
+class error{
+    public:
 
+    error(short i,std::string msg);
+
+    std::string toString();
+
+    short i;//1:not found;2:
+    std::string msg;
+
+    private:
+    
+    error(const error& e);
+
+};
 
 
 
 }
+
 #endif

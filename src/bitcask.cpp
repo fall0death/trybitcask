@@ -6,11 +6,21 @@
 
 namespace bitcask{
 
-bool close(){
-    
+Bitcask::Bitcask():active_hint_id(0)
+,active_data_id(0){
 }
 
-bool init(){
+Bitcask::~Bitcask(){
+    this->close();
+}
+
+bool close(){
+    if(active_data_file.idopen()){
+        
+    }
+}
+
+void init(){
     
 }
 
