@@ -9,12 +9,14 @@
 #include<vector>
 #include<time.h>
 #include<unistd.h>
+#include<sys/stat.h>
+#include<fcntl.h>
 
 namespace bitcask{
 
-const std::string index_directory = "/index";
-const std::string data_directory = "/data";
-const std::string index_file_name = "db_index_";
+const std::string hint_directory = "hint";
+const std::string data_directory = "data";
+const std::string hint_file_name = "db_index_";
 const std::string data_file_name = "db_data_";
 
 struct bitcask_data{
@@ -54,8 +56,8 @@ class Bitcask{
         Bitcask(const Bitcask &b);
         void operator = (const bitcask &b);
 
-        std::ostream active_data_file;
-        std::ostream active_hint_file;
+        std::fstream active_data_file;
+        std::fstream active_hint_file;
         
         unordered_map<std::string,bitcask_index> index_hash;//索引的哈希图
 
@@ -64,6 +66,13 @@ class Bitcask{
 
         bool write_hint_file();
         bool write_data_file();
+
+        void init_directory(const std::string &directory);
+        int file_is_exist(const std::string & s);
+        int new_folder(const std::string & s);
+
+        int file_max_id(const std::string & directory , const std::string & file);
+
         bool read_file();
 
 
@@ -73,15 +82,14 @@ class error{
     public:
 
     error(short i,std::string msg);
-
+    int getType(){
+        return i;
+    }
     std::string toString();
-
+    
+    private:
     short i;//1:not found;2:
     std::string msg;
-
-    private:
-    
-    error(const error& e);
 
 };
 
