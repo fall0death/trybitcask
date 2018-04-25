@@ -30,12 +30,18 @@ void init(){
         active_hint_id = find_max_id(hint_directory,hint_file_name);
 
         
+        
+        
 
     }catch(error e){
         throw e;
     }
-    
+}
 
+void file_ostream(const std::string & directory , const std::string & file ){
+    if(active_data_id == -1){
+        active_data_id = 0
+    }
 
 }
 
@@ -51,7 +57,7 @@ void init(){
 int find_max_id(const std::string & directory , const std::string & file){
     DIR *dir;  
     struct dirent *d;
-    int max = -1;
+    int max = 0;
     if((dir=opendir(directory.c_str()))==NULL){  
         error e(2,directory+" not found");  
         throw e;
@@ -66,20 +72,17 @@ int find_max_id(const std::string & directory , const std::string & file){
             }
             if(i!=file.length())continue;
             //判断是否有对应文件名的前缀
-            int num = -1;
+            int num = 0;
             for(;i<d->d_reclen;i++){
                 if(d->d_name[i]>='0'&&d->d_name[i]<='9'){
-                    if(num == -1){
-                        num = 0;
-                    }
                     num = num * 10 + (d->d_name - '0');
                 }else{
                     break;
-                    num = -1;
+                    num = 0;
                 }
             }//拿到当前文件的id
-            if(num!= -1){
-                if(max == -1 || max < num) max = num;
+            if(num!= 0){
+                if(max < num) max = num;
             }
         }
     }
