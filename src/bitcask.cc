@@ -15,21 +15,27 @@ Bitcask::~Bitcask(){
     this->close();
 }
 
-bool close(){
-    if(){
-        
+void close(){
+    if(active_data_file.is_open()){
+        active_data_file.close();
     }
+    if(active_hint_file.is_open()){
+        active_hint_file.close();
+    }
+    index_hash.clear();
 }
 
 void init(){
     try{
-        init_directory(data_directory);
-        init_directory(hint_directory);
+        this->init_directory(data_directory);
+        this->init_directory(hint_directory);
 
-        active_data_id =find_max_id(data_directory,data_file_name);
-        active_hint_id = find_max_id(hint_directory,hint_file_name);
+        this->active_data_id = this->find_max_id(data_directory,data_file_name);
+        this->active_hint_id = this->find_max_id(hint_directory,hint_file_name);
 
+        this->file_ostream();
         
+        this->map_create();
         
         
 
@@ -38,11 +44,26 @@ void init(){
     }
 }
 
-void file_ostream(const std::string & directory , const std::string & file ){
-    if(active_data_id == -1){
-        active_data_id = 0
-    }
+// ios::in	为输入(读)而打开文件
+// ios::out	为输出(写)而打开文件
+// ios::ate	初始位置：文件尾
+// ios::app	所有输出附加在文件末尾
+// ios::trunc	如果文件已存在则先删除该文件
+// ios::binary	二进制方式
 
+void file_ostream(){
+    std::string path = data_directory + "/" + data_file_name + active_data_id ;
+    active_data_file.open(path,ios::binary|ios::out|ios::app);
+    if(!active_data_file.is_open()){
+        error e(4,path+"文件打开失败");
+        throw e;
+    }//打开文件，没有的话自动创建
+    path = hint_directory + "/" + hint_file_name + active_hint_id ;
+    active_hint_file.open(path,ios::binary|ios::out|ios::app);
+    if(!active_hint_file.is_open()){
+        error e(4,path+"文件打开失败");
+        throw e;
+    }
 }
 
 // struct dirent     在 dirent.h头文件中
@@ -116,6 +137,37 @@ int file_is_exist(const std::string s){
     }else{
         return suc = access(s.c_str(),06);
         //这里也可以用s.data()，但这里是const char* ，如果要变成char*要强制类型转换
+    }
+}
+
+void map_create(){
+    for(int i = 0 ;i < active_hint_id;i++){
+        ifstream hint_file;
+        std::string path = data_directory + "/" + data_file_name + i ;
+        hint_file.open(path,ios::binary|ios::in);
+        if(!hint_file.is_open()){
+            error e(4,path+"文件打开失败");
+            throw e;
+        }
+        hint_file.seekg(0,ios::beg);
+
+        index_hash.reserve(INT_MAX);
+        index_hash.rehash(INT_MAX);
+
+        while(!hint_file.iseof()){
+            struct bitcask_index index;
+            hint_file.read((char*)&(index.time),sizeof(time_t));
+            hint_file.read((char*)&(index.flag),sizeof(bool));
+            hint_file.read((char*)&(index.key_len),sizeof(int64_t));
+            char* key = new char[index.key_len];
+            hint_file.read(key,index.key_len);
+            hint_file.read((char*)&(index.file_id),sizeof(int64_t));
+            hint_file.read((char*)&(index.file_pos),sizeof(int64_t));
+            index.key = key;
+
+            index_hash.insert(make_pair<std::string,bitcask_index>(index.key,index));
+
+        }
     }
 }
 

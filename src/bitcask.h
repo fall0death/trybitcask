@@ -11,6 +11,7 @@
 #include<unistd.h>
 #include<sys/stat.h>
 #include<fcntl.h>
+#include<limits.h>
 
 namespace bitcask{
 
@@ -59,7 +60,7 @@ class Bitcask{
         std::ofstream active_data_file;
         std::ofstream active_hint_file;
         
-        unordered_map<std::string,bitcask_index> index_hash;//索引的哈希图
+        std::unordered_map<std::string,bitcask_index> index_hash;//索引的哈希图
 
         int64_t active_hint_id;
         int64_t active_data_id;
@@ -71,9 +72,12 @@ class Bitcask{
         int file_is_exist(const std::string & s);
         int new_folder(const std::string & s);
 
-        void file_ostream(const std::string &directory, const std::string &file);
+        void file_ostream();//将活跃的id的文件打开，用于之后的写入
+
+        void map_create();//建立索引表
 
         int file_max_id(const std::string & directory , const std::string & file);
+        //找到活跃的id（即文件名字中最大的id）
 
         bool read_file();
 
