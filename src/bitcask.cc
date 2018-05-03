@@ -37,7 +37,6 @@ void init(){
         
         this->map_create();
         
-        
 
     }catch(error e){
         throw e;
@@ -193,7 +192,5 @@ bool write_file(){
 bool read_file(){
     
 }
-
-
 
 }
