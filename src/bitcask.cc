@@ -12,7 +12,7 @@ Bitcask::Bitcask()
 }
 
 Bitcask::~Bitcask()
-{
+{ 
     this->close();
 }
 
@@ -75,7 +75,7 @@ void Bitcask::file_ostream()
     } //打开文件，没有的话自动创建
 
     try{
-        active_data_pos = file_size(path);
+        active_data_pos = this->file_size(path);
     }catch(error e){
         throw e;
     }
@@ -91,13 +91,11 @@ void Bitcask::file_ostream()
         throw e;
     }
 
-    struct stat fileInfo_;
-    if (stat(path, &fileInfo_) < 0)  
-    {  
-        error e(1,"文件"+data_file_name+int_to_string(id)+"打开失败！");
+    try{
+        active_hint_pos = this->file_size(path);
+    }catch(error e){
         throw e;
     }
-    active_hint_pos = fileInfo_.st_size;
 }
 
 // struct dirent     在 dirent.h头文件中
@@ -198,10 +196,10 @@ int Bitcask::file_is_exist(const std::string &s)
 
 void Bitcask::map_create()
 {
-    for (int i = 0; i < active_hint_id; i++)
+    for (uint64_t i = 0; i < active_hint_id; i++)
     {
         std::ifstream hint_file;
-        std::string path = data_directory + "/" + data_file_name + int_to_string(i);
+        std::string path = hint_directory + "/" + hint_file_name + int_to_string(i);
         hint_file.open(path.data(), std::ios::binary | std::ios::in);
         if (!hint_file.is_open())
         {
@@ -245,14 +243,14 @@ void Bitcask::map_create()
 //     uint64_t value_len;//数据段的长度
 //     std::string value;//数据
 // };//存储数据的结构体
-void _insert(const std::string& key,const std::string& value)
+void Bitcask::_insert(const std::string& key,const std::string& value)
 {
     try{
         int i = index_hash.count(key);
         if(i){
             bitcask_index b_i = index_hash[key];
             if(b_i.flag){
-                error e(4,"字段\""+key"\"已经存在！");
+                error e(4,"字段\""+key+"\"已经存在！");
                 throw e;
             }
         }
@@ -263,18 +261,18 @@ void _insert(const std::string& key,const std::string& value)
         b_d.value_len = value.length();
         b_d.value = value;
         bitcask_index b_i;
-        b_i.file_pos=write_data_file(&b_d);
+        b_i.file_pos=write_data_file(b_d);
         b_i.time = time(NULL);
         b_i.flag = true;
         b_i.key_len = key.length();
         b_i.key = key;
         b_i.file_id = active_data_id;
-        write_hint_file(&b_i);
+        write_hint_file(b_i);
     }catch(error e){
         throw e;
     }
 } //增操作
-void _update(const std::string &key,const std::string &value){
+void Bitcask::_update(const std::string &key,const std::string &value){
     try{
         int i = index_hash.count(key);
         if(i){
@@ -286,13 +284,13 @@ void _update(const std::string &key,const std::string &value){
                 b_d.key = key;
                 b_d.value_len = value.length();
                 b_d.value = value;
-                b_i.file_pos=write_data_file(&b_d);
+                b_i.file_pos=write_data_file(b_d);
                 b_i.time = time(NULL);
                 b_i.flag = true;
                 b_i.key_len = key.length();
                 b_i.key = key;
                 b_i.file_id = active_data_id;
-                write_hint_file(&b_i);
+                write_hint_file(b_i);
                 return;
             }
         }
@@ -302,14 +300,14 @@ void _update(const std::string &key,const std::string &value){
         throw e;
     }
 } //改操作
-void _delete(const std::string &key){
+void Bitcask::_delete(const std::string &key){
     try{
         int i = index_hash.count(key);
         if(i){
             bitcask_index b_i = index_hash[key];
             if(b_i.flag){
                 b_i.flag = false;
-                write_hint_file(&b_i);
+                write_hint_file(b_i);
                 return;
             }
         }
@@ -319,23 +317,32 @@ void _delete(const std::string &key){
         throw e;
     }
 } //删操作
-void _select(const std::string& key,time_t &t,std::string &value){
+void Bitcask::_select(const std::string& key,time_t &t,std::string &value){
     try{
         int i = index_hash.count(key);
         if(i){
             bitcask_index b_i = index_hash[key];
             if(b_i.flag){
                 std::string path = data_directory + data_file_name + int_to_string(b_i.file_id);
-                std::istream data_file(path,std::ios::in|std::ios::binary);
+                std::ifstream data_file(path.data(),std::ios::in|std::ios::binary);
+                if(!data_file.is_open()){
+                    error e(3,"打开文件\""+path+"\"失败！");
+                    throw e;
+                }
+                uint32_t size = file_size(path);
+                if(b_i.file_pos>=size){
+                    error e(3,"数据出现问题！");
+                    throw e;
+                }
                 data_file.seekg(b_i.file_pos,std::ios::beg);
 
                 uint64_t key_len;
                 uint64_t value_len;
-                data_file.read((char *)t, sizeof(time_t));
-                data_file.read((char *)key_len,sizeof(uint64_t));
+                data_file.read((char *)&t, sizeof(time_t));
+                data_file.read((char *)&key_len,sizeof(uint64_t));
                 char* key_ = new char[key_len];
                 data_file.read(key_,key_len);
-                data_file.read((char *)value_len,sizeof(uint64_t));
+                data_file.read((char *)&value_len,sizeof(uint64_t));
                 char* value_ = new char[value_len];
                 data_file.read(value_,value_len);
                 value = value_;
@@ -347,14 +354,14 @@ void _select(const std::string& key,time_t &t,std::string &value){
         throw e;
     }
 } //查操作
-bool _merge()
+void Bitcask::_merge()
 {
     
 } //整合数据
 
-uint32_t write_data_file(uint64_t id,const bitcask_data& b_d){
+uint64_t Bitcask::write_data_file(const bitcask_data& b_d){
     uint32_t pos = active_data_pos;
-    active_data_pos += sizeof(time_t)+sizeof(uint64_t)+sizeof(uint64_t)+b_d.key.length()+b_d.value.length()
+    active_data_pos += sizeof(time_t)+sizeof(uint64_t)+sizeof(uint64_t)+b_d.key.length()+b_d.value.length();
     if(active_data_pos>=max_file){
         active_data_file.close();
         active_data_id++;
@@ -366,13 +373,13 @@ uint32_t write_data_file(uint64_t id,const bitcask_data& b_d){
             throw e;
         }
         
-        return write_data_file(&b_d); 
+        return write_data_file(b_d); 
     }
 
-    active_data_file.write((char*) b_d.time, sizeof(time_t));
-    active_data_file.write((char*) b_d.key_len, sizeof(uint64_t));
+    active_data_file.write((char*)&(b_d.time), sizeof(time_t));
+    active_data_file.write((char*)&(b_d.key_len), sizeof(uint64_t));
     active_data_file.write(b_d.key.data(),b_d.key.length());
-    active_data_file.write((char*) b_d.value_len, sizeof(uint64_t));
+    active_data_file.write((char*)&(b_d.value_len), sizeof(uint64_t));
     active_data_file.write(b_d.value.data(),b_d.value.length());
 
     active_data_file.flush();
@@ -381,9 +388,9 @@ uint32_t write_data_file(uint64_t id,const bitcask_data& b_d){
     
 }//写入数据文件
 
-void write_hint_file(uint64_t id,const bitcask_index& b_i){
+void Bitcask::write_hint_file(const bitcask_index& b_i){
     uint32_t pos = active_hint_pos;
-    active_hint_pos += sizeof(time_t)+sizeof(uint64_t)+sizeof(uint64_t)+b_i.key.length()+b_i.value.length()
+    active_hint_pos += sizeof(time_t)+sizeof(bool)+sizeof(uint64_t)+b_i.key.length()+sizeof(uint64_t)+sizeof(uint64_t);
     if(active_hint_pos>=max_file){
         active_hint_file.close();
         active_hint_id++;
@@ -397,15 +404,16 @@ void write_hint_file(uint64_t id,const bitcask_index& b_i){
             throw e;
         }
 
-        write_hint_file(&b_i); 
+        write_hint_file(b_i); 
         return;
     }
 
-    active_hint_file.write((char*) b_i.time, sizeof(time_t));
-    active_hint_file.write((char*) b_i.key_len, sizeof(uint64_t));
+    active_hint_file.write((char*)&(b_i.time), sizeof(time_t));
+    active_hint_file.write((char*)&(b_i.flag), sizeof(bool));
+    active_hint_file.write((char*)&(b_i.key_len), sizeof(uint64_t));
     active_hint_file.write(b_i.key.data(),b_i.key.length());
-    active_hint_file.write((char*) b_i.value_len, sizeof(uint64_t));
-    active_hint_file.write(b_i.value.data(),b_i.value.length());
+    active_hint_file.write((char*)&(b_i.file_id), sizeof(uint64_t));
+    active_hint_file.write((char*)&(b_i.file_pos), sizeof(uint32_t));
 
     active_hint_file.flush();
 
@@ -413,9 +421,9 @@ void write_hint_file(uint64_t id,const bitcask_index& b_i){
     
 }//写入索引文件
 
-uint32_t file_size(const std::string &path){
+uint32_t Bitcask::file_size(const std::string &path){
     struct stat fileInfo;
-        if (stat(path, &fileInfo) < 0){
+        if (stat(path.c_str(), &fileInfo) < 0){
             error e(1,"文件"+path+"打开失败！");
             throw e;
         }

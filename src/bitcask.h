@@ -50,10 +50,10 @@ class Bitcask{
 
         void init();//进行初始化操作
 
-        void _insert(std::string key,std::string value);//增操作
-        void _update(std::string key,std::string value);//改操作
-        void _delete(std::string key);//删操作
-        void _select(std::string key,std::string value);//查操作
+        void _insert(const std::string& key,const std::string& value);//增操作
+        void _update(const std::string &key,const std::string &value);//改操作
+        void _delete(const std::string &key);//删操作
+        void _select(const std::string& key,time_t &t,std::string &value);//查操作
         void _merge();//整合数据
 
         
@@ -71,12 +71,12 @@ class Bitcask{
         uint64_t active_data_id;
 
         uint32_t active_data_pos;
-        uint32_t acitve_hint_pos;
+        uint32_t active_hint_pos;
         
         const uint32_t max_file= 4096; 
 
-        void write_hint_file(int64_t id,const bitcask_index& b_d);
-        uint64_t write_data_file(int64_t id,const bitcask_data& b_d);
+        void write_hint_file(const bitcask_index& b_d);
+        uint64_t write_data_file(const bitcask_data& b_d);
 
         void init_directory(const std::string &directory);
         int file_is_exist(const std::string & s);
@@ -90,6 +90,8 @@ class Bitcask{
         //找到活跃的id（即文件名字中最大的id）
 
         bool read_file();
+
+        uint32_t file_size(const std::string &path);
 
 
 };
