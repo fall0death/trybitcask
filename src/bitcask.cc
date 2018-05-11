@@ -196,7 +196,7 @@ int Bitcask::file_is_exist(const std::string &s)
 
 void Bitcask::map_create()
 {
-    for (uint64_t i = 0; i < active_hint_id; i++)
+    for (uint64_t i = 0; i <= active_hint_id; i++)
     {
         std::ifstream hint_file;
         std::string path = hint_directory + "/" + hint_file_name + int_to_string(i);
@@ -208,8 +208,6 @@ void Bitcask::map_create()
         }
         hint_file.seekg(0, std::ios::beg);
 
-        Bitcask::index_hash.reserve(INT_MAX);
-        Bitcask::index_hash.rehash(INT_MAX);
 
         while (!hint_file.eof())
         {
@@ -268,6 +266,7 @@ void Bitcask::_insert(const std::string& key,const std::string& value)
         b_i.key = key;
         b_i.file_id = active_data_id;
         write_hint_file(b_i);
+        index_hash[key] = b_i;
     }catch(error e){
         throw e;
     }
@@ -291,6 +290,7 @@ void Bitcask::_update(const std::string &key,const std::string &value){
                 b_i.key = key;
                 b_i.file_id = active_data_id;
                 write_hint_file(b_i);
+                index_hash[key] = b_i;
                 return;
             }
         }
@@ -308,6 +308,7 @@ void Bitcask::_delete(const std::string &key){
             if(b_i.flag){
                 b_i.flag = false;
                 write_hint_file(b_i);
+                index_hash[key] = b_i;
                 return;
             }
         }
@@ -323,7 +324,7 @@ void Bitcask::_select(const std::string& key,time_t &t,std::string &value){
         if(i){
             bitcask_index b_i = index_hash[key];
             if(b_i.flag){
-                std::string path = data_directory + data_file_name + int_to_string(b_i.file_id);
+                std::string path = data_directory + "/" + data_file_name + int_to_string(b_i.file_id);
                 std::ifstream data_file(path.data(),std::ios::in|std::ios::binary);
                 if(!data_file.is_open()){
                     error e(3,"打开文件\""+path+"\"失败！");
@@ -346,6 +347,7 @@ void Bitcask::_select(const std::string& key,time_t &t,std::string &value){
                 char* value_ = new char[value_len];
                 data_file.read(value_,value_len);
                 value = value_;
+                return;
             }
         }
         error e(1,"字段\""+key+"\"不存在");

@@ -6,9 +6,9 @@
 
 int main() {
     bitcask::Bitcask b;
+    b.init();
     while(1){
         try{
-            b.init();
             int i;
             std::cout<<"1:insert,2:update,3:delete,4:select"<<std::endl;
             std::cin>>i;
@@ -48,7 +48,6 @@ int main() {
                     return 0;
                 break;
             }
-            return 0;
         }catch(bitcask::error e){
             std::cout<<e.toString()<<std::endl;
         }
