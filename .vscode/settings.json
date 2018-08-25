@@ -30,6 +30,9 @@
         "typeinfo": "cpp",
         "utility": "cpp",
         "system_error": "cpp",
-        "sstream": "cpp"
+        "sstream": "cpp",
+        "unordered_map": "cpp",
+        "vector": "cpp",
+        "numeric": "cpp"
     }
 }

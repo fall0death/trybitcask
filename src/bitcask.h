@@ -16,12 +16,14 @@
 #include<dirent.h>
 #include<limits.h>
 
+#include "locker.h"
 namespace bitcask{
 
 const std::string hint_directory = "hint";
 const std::string data_directory = "data";
 const std::string hint_file_name = "db_index_";
 const std::string data_file_name = "db_data_";
+const std::string merge_name = "_merge";
 
 struct bitcask_data{
     time_t time;//增加数据的时间
@@ -70,13 +72,22 @@ class Bitcask{
         uint64_t active_hint_id;
         uint64_t active_data_id;
 
+        mutex_lock hash_lock;
+        mutex_lock read_lock;
+
         uint32_t active_data_pos;
         uint32_t active_hint_pos;
         
         const uint32_t max_file= 4096; 
 
+        bool read_data_file(const std::string& path,const uint32_t& file_pos,const std::string &key,std::string& value,time_t& t);
+
         void write_hint_file(const bitcask_index& b_d);
         uint64_t write_data_file(const bitcask_data& b_d);
+
+        uint64_t merge_data_file(uint64_t& data_id,uint32_t &data_pos,std::ofstream& data_ostream,const bitcask_data& b_d);
+        
+        void merge_hint_file(uint64_t& hint_id,uint32_t &hint_pos,std::ofstream& hint_ostream,const bitcask_index& b_i);
 
         void init_directory(const std::string &directory);
         int file_is_exist(const std::string & s);

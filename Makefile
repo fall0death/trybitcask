@@ -4,7 +4,7 @@
 example: hello.o bitcask.o
 	g++ -std=c++11  hello.o bitcask.o -o example
 
-bitcask.o:src/bitcask.cc src/bitcask.h
+bitcask.o:src/bitcask.cc src/bitcask.h src/locker.h
 	g++ -std=c++11 -g -c src/bitcask.cc 
 
 hello.o:src/hello.cc src/bitcask.h

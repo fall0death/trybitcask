@@ -10,7 +10,7 @@ int main() {
     while(1){
         try{
             int i;
-            std::cout<<"1:insert,2:update,3:delete,4:select"<<std::endl;
+            std::cout<<"1:insert,2:update,3:delete,4:select,5:merge"<<std::endl;
             std::cin>>i;
             std::string key;
             std::string value;
@@ -41,7 +41,12 @@ int main() {
                     b._select(key,_time,value);
                     std::cout<<"the value is: "+value<<std::endl;
                     std::cout<<"the time is: ";
-                    std::cout<<_time<<std::endl;
+                    std::cout<<ctime(&_time)<<std::endl;
+                break;
+                case 5:
+                    std::cout<<"start merging..."<<std::endl;
+                    b._merge();
+                    std::cout<<"complete"<<std::endl;
                 break;
                 default:
                     std::cout<<"bye"<<std::endl;
